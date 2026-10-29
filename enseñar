@@ -1,0 +1,71 @@
+package org.firstinspires.ftc.teamcode; // Carpeta donde vive tu código en el proyecto FTC
+
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode; // Tipo de programa que se ejecuta paso a paso, de arriba hacia abajo
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;       // Etiqueta para que el programa aparezca en la lista de TeleOp
+import com.qualcomm.robotcore.hardware.DcMotor;              // Clase para controlar un motor DC
+import com.qualcomm.robotcore.hardware.DcMotorSimple;        // Se usa para invertir la dirección del motor 
+
+@TeleOp(name = "Mecanum TeleOp", group = "Chasis") // Nombre que verás en la Driver Station y el grupo donde se muestra
+public class MecanumTeleOp extends LinearOpMode {  // Creamos nuestra clase; "extends" significa que hereda las funciones de LinearOpMode
+
+    // Declaramos una variable para cada motor del chasis
+    private DcMotor frontLeft;  // Motor delantero izquierdo
+    private DcMotor frontRight; // Motor delantero derecho
+    private DcMotor backLeft;   // Motor trasero izquierdo
+    private DcMotor backRight;  // Motor trasero derecho
+
+    @Override // Indica que estamos reemplazando el método runOpMode que ya existe en LinearOpMode
+    public void runOpMode() { // Aquí va todo el programa principal
+
+        //CONECTAR LOS MOTORES CON LA CONFIGURACIÓN DEL ROBOT A LA DRIVER
+        // Los nombres entre comillas deben ser IGUALES a los que escribiste en la configuración del Robot Controller
+        frontLeft  = hardwareMap.get(DcMotor.class, "frontLeft");  
+        frontRight = hardwareMap.get(DcMotor.class, "frontRight"); 
+        backLeft   = hardwareMap.get(DcMotor.class, "backLeft");
+        backRight  = hardwareMap.get(DcMotor.class, "backRight");  
+
+        // INVERTIR DIRECCIÓN DE LOS MOTORES 
+        
+        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);  // Invertimos el delantero izquierdo
+        backLeft.setDirection(DcMotorSimple.Direction.REVERSE);   // Invertimos el trasero izquierdo
+        frontRight.setDirection(DcMotorSimple.Direction.FORWARD); // El derecho queda normal, no es necesario escribir esto
+        backRight.setDirection(DcMotorSimple.Direction.FORWARD);  // El derecho queda normal, no es necesario escribir esto
+        // Si tu robot se mueve al revés, invierte estas direcciones
+
+        //  FRENO 
+        // BRAKE hace que el motor se frene al soltar el joystick 
+        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        waitForStart(); // Esperar hasta que presiones el botón START
+
+        //  CICLO PRINCIPAL 
+        while (opModeIsActive()) { // Se repite todo el tiempo mientras el programa esté corriendo
+
+            // Leemos los joysticks del control 1
+            double y  = -gamepad1.left_stick_y;  // Adelante/atrás. Va con signo negativo porque el joystick da valores negativos hacia arriba
+            double x  =  gamepad1.left_stick_x * 1.1; // Izquierda/derecha, El 1.1 compensa que el movimiento lateral es menos eficiente
+            double rx =  gamepad1.right_stick_x; // Giro del robot sobre su propio eje
+
+            // Esta es la fórmula característica del chasis mecanum)
+            double denominador = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
+            // math abs= valor absoluto 
+            //max = el maximo es 1 y escala hacia abajo si es mayor lo que hace que el robot funcione normal
+
+            double potenciaFL = (y + x + rx) / denominador; // Delantero izquierdo, todas las potencias van hacia adelante
+            double potenciaBL = (y - x + rx) / denominador; // Trasero izquierdo, giro sobre su eje 
+            double potenciaFR = (y - x - rx) / denominador; // Delantero derecho, todas las potencias van hacia atrás
+            double potenciaBR = (y + x - rx) / denominador; // Trasero derecho, strafer
+
+            // Enviamos las potencias calculadas a cada motor
+            frontLeft.setPower(potenciaFL);
+            backLeft.setPower(potenciaBL);
+            frontRight.setPower(potenciaFR);
+            backRight.setPower(potenciaBR);
+
+          
+        } // Fin del ciclo: cuando presionas STOP, el programa sale de aquí y termina
+    }
+}
